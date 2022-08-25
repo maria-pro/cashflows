@@ -1,0 +1,230 @@
+---
+title: "It is all about cash flows"
+execute: 
+  echo: true
+  warning: false
+format: html
+editor: visual
+---
+
+## Can we not talk about.. (no, not quarto..) cash flows!
+
+We are continuing with a series of blog posts around actuarial-accounting domain where we strive to lighten up interest of the data science community in using their R skills for the actuarial/accounting domain. We also hope to help some actuaries and accountants with their R skills.
+
+This time we cannot avoid the elephant in the cupboard - which is cash flows in times of recession.
+
+So ~~how is your cash going?~~ working through and communicating the cash flow analysis. Cash flows is one of the main business concepts and ~~disclosure~~ proper communication of your cash flows breakdown is vital for any business ~~and household!~~.
+
+While presentation of cash flows is vital at any times, the recession (can we finally say it?) make it really important to show it not only truly and fairly (in accounting terminology), but also to communicate it to the highest impact.
+
+So what is the problem with its communication? Well. Look at the image below and tell how excited you are and does it make a lot of sense if you give a flash look:
+
+![](img/cashflows.png)
+
+It is incredibly insightful (if you do know what to look for), but for an non-accounting person (with powers to make decisions), it may not be.
+
+Now look at this!
+
+![](https://ppcexpo.com/blog/wp-content/uploads/2022/05/cash-flow-chart-16.jpg)
+
+This is another cash flow from a fellow Excel tutorial. It is a personal cash flow to be exact, but oh so insightful! Those numbers start talking to me - showing in a sec where all my money goes!
+
+We all know that a picture is worth a thousand words, but if it is a thousand millions \$, it's truly priceless.
+
+So. let's beg for automation and turn to data God's for wisdom ~~yes, open your RStudio everyone!~~
+
+This type of charts is called **sankey charts**, they are NOT common at all in the actuarial/accounting world, but, honestly, it is not that common to see lots of visualisations in the financial reports, well, apart from happy customers in annual reports which, as we all know, is a marketing thing.
+
+Sankey charts are used to show **flows** and **cash flows** is a good example of such usage.
+
+Let's have a look at the example above when the cash flows are shown in Excel and Google Sheets and develop a visualization in R.
+
+There are several ways to do this and several packages available.
+
+To name a view - `networkD3` package, `diagrammeR` package
+
+The dataset is an extremely simple one - to demonstrate the application, while we can further extend it to include more transactional data, different sources of income, types of income, etc. On the next step we can look at inflows and outflows, classify them into types of business activities by automating this usually tedious and manual task and present in a nice chart to our stakeholders.
+
+But. let's start with ... this simple one! And let's use the [`networkD3`](https://cran.r-project.org/web/packages/networkD3)
+
+```{r}
+library(tidyverse)
+library(networkD3)
+```
+You can view some awesome visualizations with this package [here](https://r-graph-gallery.com/sankey-diagram.html)
+
+The package helps creating [D3](http://d3js.org/) JavaScript Network Graphs for [htmlwidgets](https://github.com/ramnathv/htmlwidgets) to use graphs in RStudio's Viewer Pane, RMarkdown, and Shiny web apps.
+
+The data looks like this: it is indeed a TINY dataset
+
+```{r}
+dim(data)
+data%>%head()
+```
+This type of diagram is based on visualising **flows** which are connections from one **node** to another. In our case the flows are distinct types of cash income that flows into the entity.
+
+The dataset shows the sources of income `income_source` (the initial set of nodes), type of income `type_income` (subgroup of `income sources`), type of cash flow which is cash receipts, `income` (as opposed to payments). It also shows the use of the money - cash payments, `spending_source`, and type of spending, `spending_type`.
+
+```{r}
+data<-read_csv("data/cf.csv")
+
+data %>% head()
+```
+
+**Note**:
+
+In this particular example, we use the dataset from the tutorial for Excel users. Some data transformations have already done there to suit "Excel-type" steps. For example, the amount of cash receipts were matched with a particular cash spending type. In real life, you would not expect this data matching as most likely your cash flow records just shows type of cash flow (cash receipt vs cash payment) and the amount. The matching to the type of cash receipt/cash payment is still required as to match this individual items with the *type of income* or *type of expense*. So further we are going to work with the transformed dataset that looks somewhat similar to the real-life data. 
+
+```{r}
+links<-read_csv("data/cf_up.csv")
+
+links %>% head()
+```
+We simplified the task showing `source` and `target` in the dataset, where in real-life the target is defined as the next level of classification of a particular cash flow category.
+
+To create a sankey chart we are going to use `sankeyNetwork()` function that has the following usage:
+
+```{r eval=FALSE}
+sankeyNetwork(Links, Nodes, Source, Target, Value, NodeID, 
+              NodeGroup = NodeID,   
+              LinkGroup = NULL, 
+              units = "",   
+              colourScale =JS("d3.scaleOrdinal(d3.schemeCategory20);"), 
+              fontSize = 7,   
+              fontFamily = NULL, 
+              nodeWidth = 15,
+              nodePadding = 10, 
+              margin = NULL,   h
+              eight = NULL, 
+              width = NULL, 
+              iterations = 32, 
+              sinksRight = TRUE)`
+```
+
+The bare minimum is to supply `Links`, `Nodes`, `Source`, `Target` and  `Value`.
+
+We have two options to use data for this function: 
+
+**Option 1** is to use the connection data with one column for **target**, another for **source** and the third one for the **value**
+
+**Option 2** is to use an [incidence matrix](https://en.wikipedia.org/wiki/Incidence_matrix#:~:text=In%20mathematics%2C%20an%20incidence%20matrix,for%20each%20element%20of%20Y.), i.e. a square matrix mapping nodes and connections between them.
+
+Let's start with **Option 1** as the most common case for accounting.
+
+To create a cash flow we need two dataframes that we will use in `sankeyNetwork()` function from the `networkD3` package:
+
+-   *dataframe 1* is a nodes dataframe with list of receipts, types of receipts, types of spending and cash payments
+
+-   *dataframe 2* is a links dataframe which itemized each flow using a source, target and value column. For example, we received 494US part of the salary was used to pay tax: salary is the earned income and payment of tax is a deduction. In this case the source is the `Salary` item, the target is `Earned income` and the value is 494. `Earned income`is also a source node that has `Income` (i.e. a broader category) target. `Income` is then distributed to expenses, i.e target category `Deduction` which is the later becomes a source node for `Income tax` target.
+
+We start with setting up a list of nodes: in this case we have *sources* (the nodes that initiate the flow) and *targets* (the nodes that finish the flow). 
+
+The *sources* are `income_source`, `income_type`, `income` and `spending_source`. Our *targets* are `income_type`, `income`, `spending_source` and `spending_type`
+
+```{r}
+nodes <- data.frame(
+  name=c(as.character(links$source), 
+  as.character(links$target)) %>% unique()
+)
+```
+
+We cannot use nodes names in in the function and need to replace our connections with id, i.e. `IDsource` and `IDtarget`
+
+```{r}
+
+links$IDsource <- match(links$source, nodes$name)-1 
+links$IDtarget <- match(links$target, nodes$name)-1
+```
+
+```{r}
+p <- sankeyNetwork(Links = links, 
+                   Nodes = nodes,
+                   Source = "IDsource", 
+                   Target = "IDtarget",
+                   Value = "value", 
+                   sinksRight=TRUE
+                   )
+p
+```
+
+`sinksRight= TRUE` shows the direction of the graph and position of the last node. Set to `FALSE` it will position the graph in the opposite direction.
+
+As we hover over the chart we can see the connection between nodes and values assigned to the connection.
+
+This chart looks good, but ... boring... Let's pour life in it
+
+We are going to include `NodeID = "name"` which uses the `nodes$name` and  units of measurement `units = '$'`
+
+```{r}
+p <- sankeyNetwork(Links = links, 
+                   Nodes = nodes,
+                   Source = "IDsource", 
+                   Target = "IDtarget",
+                   Value = "value", 
+                   NodeID = "name",
+                   units = '$',
+                   sinksRight=TRUE
+  #                 LinkGroup="source"
+       #            fontSize = 10, 
+        #           nodeWidth = 30
+                   
+                   )
+p
+```
+
+Now, let's use `NodeGroup` and `LinkGroup` to add colors to nodes and link. 
+
+NodeGroups are usually defined in the `nodes` dataframe where we can create a column that will be used later in the `sankeyNetwork()`:
+
+These groups are usually set up at the reporting level and dependent on the business
+
+```{r}
+nodes$groups <- as.factor(c("Operations","Operations","Investing","Financing","Operations","Financing","Investing","Income","Operations","Operations","Investing","Operations","Operations","Operations","Operations","Operations","Operations","Operations","Financing","Investing","Financing","Financing","Operations"))
+```
+
+and we can use those groups later 
+
+
+```{r}
+
+p <- sankeyNetwork(Links = links, 
+                   Nodes = nodes,
+                   Source = "IDsource", 
+                   Target = "IDtarget",
+                   Value = "value", 
+                   NodeID = "name",
+                   units = '$',
+                   sinksRight=TRUE,
+                   NodeGroup="groups"
+                   )
+p
+
+```
+
+Similarly, we add a grouping column to the links dataframe to use it for colouring!
+
+```{r}
+links$lnks_group <- as.factor(c("Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Income","Expenses","Expenses","Expenses","Expenses","Expenses","Expenses","Expenses","Expenses","Expenses","Expenses",      "Expenses","Expenses","Expenses","Expenses","Expenses","Expenses","Expenses","Expenses","Expenses","Expenses","Expenses", "Expenses"))
+
+p <- sankeyNetwork(Links = links, 
+                   Nodes = nodes,
+                   Source = "IDsource", 
+                   Target = "IDtarget",
+                   Value = "value", 
+                   NodeID = "name",
+                   units = '$',
+                   sinksRight=TRUE,
+                   NodeGroup="groups",
+                   LinkGroup="lnks_group"
+                   )
+p
+```
+
+The best thing about created visualization is that it is an htmlwidget and is a interactive chart. 
+
+On the chart try and drag nodes and hover links.
+
+This chart can be exported to png or pdf and included in financial reports and statements!
+
+What's next? Let's have a look at more complicated [examples](https://www.kaggle.com/datasets/theworldbank/ida-statement-of-income) 
+
