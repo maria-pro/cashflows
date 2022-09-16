@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.0.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Maria">
+
+<title>Cash flow - reconciliation</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+<script src="cash flows-reconc_files/libs/clipboard/clipboard.min.js"></script>
+<script src="cash flows-reconc_files/libs/quarto-html/quarto.js"></script>
+<script src="cash flows-reconc_files/libs/quarto-html/popper.min.js"></script>
+<script src="cash flows-reconc_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="cash flows-reconc_files/libs/quarto-html/anchor.min.js"></script>
+<link href="cash flows-reconc_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="cash flows-reconc_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="cash flows-reconc_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="cash flows-reconc_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="cash flows-reconc_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#cash-flows---bank-reconciliation" id="toc-cash-flows---bank-reconciliation" class="nav-link active" data-scroll-target="#cash-flows---bank-reconciliation">Cash flows - bank reconciliation</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Cash flow - reconciliation</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Maria </p>
+          </div>
+  </div>
+    
+    
+  </div>
+  
+
+</header>
+
+<div class="cell">
+
+</div>
+<section id="cash-flows---bank-reconciliation" class="level2">
+<h2 class="anchored" data-anchor-id="cash-flows---bank-reconciliation">Cash flows - bank reconciliation</h2>
+<p>We continue with our series for “nerdy” accountants who want to diverge from Excel and master the power of R automation (and beauty!)</p>
+<p>Today we are going to have a look at the step that comes before cash flow visualization. Much much earlier…. Before we are able to put cash flow items on a nice graph, we need to “somehow” have those cash flow items.</p>
+<p>Accountants don’t have them by default, and there is no magic way to have them but rather than go transaction by transaction, classify and group them, collate them and double-check that they actually occurred! We need to make sure that we are not double-charged as well as we are not underpaying or omitting any of our payments and they are all included in the list.</p>
+<p>We start backwards from this very list and we dig into doing bank reconciliation and in particular, looking at our (business) bank statement. Indeed, a very useful exercise - not only in regards to your business but also for your own expense management.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 7
+  Date     Day       Type  Category `Debit Amount` `Credit Amount` Closing Bal…¹
+  &lt;chr&gt;    &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;             &lt;dbl&gt;           &lt;dbl&gt;         &lt;dbl&gt;
+1 1/8/2018 Wednesday Debit Shopping          2500                0       174656.
+2 1/8/2018 Wednesday Debit Shopping           324                0       174332.
+3 2/8/2018 Thursday  None  None                 0                0       174332.
+4 3/8/2018 Friday    Debit Shopping           404.               0       173928.
+5 4/8/2018 Saturday  Debit Shopping           100                0       173828.
+6 4/8/2018 Saturday  Debit Shopping          1395                0       172433.
+# … with abbreviated variable name ¹​`Closing Balance`</code></pre>
+</div>
+</div>
+<p>Column names have blanks and they do not play well in functions, so let’s use <code>clean_names()</code> from <code>janitor</code> package to make them more R friendly</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 6 × 7
+  date     day       type  category debit_amount credit_amount closing_balance
+  &lt;chr&gt;    &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;           &lt;dbl&gt;         &lt;dbl&gt;           &lt;dbl&gt;
+1 1/8/2018 Wednesday Debit Shopping        2500              0         174656.
+2 1/8/2018 Wednesday Debit Shopping         324              0         174332.
+3 2/8/2018 Thursday  None  None               0              0         174332.
+4 3/8/2018 Friday    Debit Shopping         404.             0         173928.
+5 4/8/2018 Saturday  Debit Shopping         100              0         173828.
+6 4/8/2018 Saturday  Debit Shopping        1395              0         172433.</code></pre>
+</div>
+</div>
+<p>That’s better! so now all variables are in small letters and have camel_case!</p>
+<p>Let’s explore the data and do some simple <strong>counting</strong> - yes, we love to count!</p>
+<p>Let’s see which day has the most transactions and which category is the most used one (what is the money drainer!):</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 2
+  day           n
+  &lt;chr&gt;     &lt;int&gt;
+1 Saturday     37
+2 Friday       15
+3 Sunday       13
+4 Thursday     12
+5 Wednesday    11
+6 Monday       10
+7 Tuesday       9</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 2
+   category          n
+   &lt;chr&gt;         &lt;int&gt;
+ 1 Shopping         46
+ 2 None             21
+ 3 ATM               9
+ 4 Interest          8
+ 5 Entertainment     7
+ 6 Medical           5
+ 7 Travel            4
+ 8 Restaurant        3
+ 9 Rent              2
+10 Salary            2</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="cash-flows-reconc_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>For a real business, this amount of Saturday transactions would raise a red flag, but - this data is from personal records, so looks like someone is having a blast off after a busy week :)</p>
+<p>Also, with <code>category</code> that <code>None</code> does not sound right…. it is the second highest so… I would really investigate what sort of <code>None</code> is that <code>None</code>…</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 38 × 3
+   day       category     n
+   &lt;chr&gt;     &lt;chr&gt;    &lt;int&gt;
+ 1 Saturday  Shopping    24
+ 2 Saturday  ATM          5
+ 3 Sunday    Shopping     5
+ 4 Friday    None         4
+ 5 Friday    Shopping     4
+ 6 Sunday    None         4
+ 7 Thursday  Shopping     4
+ 8 Tuesday   None         4
+ 9 Wednesday Shopping     4
+10 Monday    Interest     3
+# … with 28 more rows
+# ℹ Use `print(n = ...)` to see more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 38 × 3
+   category day           n
+   &lt;chr&gt;    &lt;chr&gt;     &lt;int&gt;
+ 1 Shopping Saturday     24
+ 2 ATM      Saturday      5
+ 3 Shopping Sunday        5
+ 4 None     Friday        4
+ 5 None     Sunday        4
+ 6 None     Tuesday       4
+ 7 Shopping Friday        4
+ 8 Shopping Thursday      4
+ 9 Shopping Wednesday     4
+10 ATM      Wednesday     3
+# … with 28 more rows
+# ℹ Use `print(n = ...)` to see more rows</code></pre>
+</div>
+</div>
+<p>Let’s have a look at the average spend</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
