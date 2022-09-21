@@ -50,6 +50,7 @@ This is a typical bank statement you can view in your bank account where each ro
 
 The dataset has `Debit Amount`, which is when you were charged, and `Credit Amount`, which is when you were paid. The `Closing Balance` is a running balance that shows the amount of cash in your account after the transaction. The most important parts of that `Closing Balance` are the initial and final numbers and they are used to reconcial (= match) balances in your own "books" (accounting books!= accounting records). If those number do not match, we investigate individual closing balances for the transactions to identify where we were overpaid or underpaid.
 
+Let's look closer at the data: it is not messy, but not ideal...
 
 Column names have blanks and they do not play well in functions, so let's use `clean_names()` from `janitor` package to make them more R friendly
 

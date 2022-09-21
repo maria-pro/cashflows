@@ -100,6 +100,7 @@ ul.task-list{list-style: none;}
 </div>
 <p>This is a typical bank statement you can view in your bank account where each row is a transaction in that reporting period (e.g.&nbsp;month). We do not have the name of the second party for the transactions (e.g.&nbsp;the name of the store or the company that credited/debited the account), but all transactions have been classified - which can be seen under <code>Category</code>.</p>
 <p>The dataset has <code>Debit Amount</code>, which is when you were charged, and <code>Credit Amount</code>, which is when you were paid. The <code>Closing Balance</code> is a running balance that shows the amount of cash in your account after the transaction. The most important parts of that <code>Closing Balance</code> are the initial and final numbers and they are used to reconcial (= match) balances in your own “books” (accounting books!= accounting records). If those number do not match, we investigate individual closing balances for the transactions to identify where we were overpaid or underpaid.</p>
+<p>Let’s look closer at the data: it is not messy, but not ideal…</p>
 <p>Column names have blanks and they do not play well in functions, so let’s use <code>clean_names()</code> from <code>janitor</code> package to make them more R friendly</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
