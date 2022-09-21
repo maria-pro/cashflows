@@ -11,7 +11,6 @@ execute:
   warning: false
 ---
 
-
 ```{r}
 library(tidyverse)
 library(janitor)
@@ -19,13 +18,24 @@ library(janitor)
 
 ## Cash flows - bank reconciliation
 
-We continue with our series for "nerdy" accountants who want to diverge from Excel and master the power of R automation (and beauty!)
+We continue with our series for "nerdy" accountants who want to diverge from Excel and master the power of R automation (and beauty!) - and we are looking at some of the most important areas of ANY business! Cash!
+
+Cash management is a really critical issue for ANY business owners and persons alike ~~me trying not to look at recent interest rates jumps~~
+
+Cash management includes cash collection, handling, and usage of cash (spending!). It is essential to have **ENOUGH** cash to cover immediate expenses, fund business growth and have working capital. Or in simple terms, you need to have enough cash to pay for your coffee, cover your morgage repayment and invest in that [Tesla Model 3](https://www.tesla.com/en_au/model3)
+
+![](img/tesla.jpg)
+
+Cash analysis is important step to assess companies short-term liquidity, evaluate working capital and make decisions about investments
 
 Today we are going to have a look at the step that comes before cash flow visualization. Much much earlier.... Before we are able to put cash flow items on a nice graph, we need to "somehow" have those cash flow items.
 
 Accountants don't have them by default, and there is no magic way to have them but rather than go transaction by transaction, classify and group them, collate them and double-check that they actually occurred! We need to make sure that we are not double-charged as well as we are not underpaying or omitting any of our payments and they are all included in the list.
 
 We start backwards from this very list and we dig into doing bank reconciliation and in particular, looking at our (business) bank statement. Indeed, a very useful exercise - not only in regards to your business but also for your own expense management.
+
+This time we do a very simple example just looking at the bank statement and making our head around. It is a "personal" bank statement that comes from [Kaggle](https://www.kaggle.com/datasets/sandhaya4u/august-bank-statement-sandhaya)
+
 
 
 ```{r}
@@ -35,6 +45,12 @@ cf2<-read_csv("data/bank_st2.csv")
 
 cf%>%head()
 ```
+
+This is a typical bank statement you can view in your bank account where each row is a transaction in that reporting period (e.g. month). We do not have the name of the second party  for the transactions (e.g. the name of the store or the company that credited/debited the account), but all transactions have been classified - which can be seen under `Category`.
+
+The dataset has `Debit Amount`, which is when you were charged, and `Credit Amount`, which is when you were paid. The `Closing Balance` is a running balance that shows the amount of cash in your account after the transaction. The most important parts of that `Closing Balance` are the initial and final numbers and they are used to reconcial (= match) balances in your own "books" (accounting books!= accounting records). If those number do not match, we investigate individual closing balances for the transactions to identify where we were overpaid or underpaid.
+
+
 Column names have blanks and they do not play well in functions, so let's use `clean_names()` from `janitor` package to make them more R friendly
 
 ```{r}
@@ -44,6 +60,7 @@ cf<-cf%>%
 
 cf%>%head()
 ```
+
 That's better! so now all variables are in small letters and have camel_case!
 
 Let's explore the data and do some simple **counting** - yes, we love to count!
@@ -59,6 +76,7 @@ cf%>%ggplot(aes(category))+
   geom_bar()+
   theme_minimal()
 ```
+
 For a real business, this amount of Saturday transactions would raise a red flag, but - this data is from personal records, so looks like someone is having a blast off after a busy week :)
 
 Also, with `category` that `None` does not sound right.... it is the second highest so... I would really investigate what sort of `None` is that `None`...
@@ -66,14 +84,15 @@ Also, with `category` that `None` does not sound right.... it is the second high
 ```{r}
 cf%>%count(day, category, sort=TRUE)
 ```
+
 ```{r}
 cf%>%count(category, day, sort=TRUE)
 ```
 
-Let's have a look at the average spend 
+Let's have a look at the average spend
 
 ....
 
 ## References
 
-https://www.kaggle.com/datasets/sandhaya4u/august-bank-statement-sandhaya 
+https://www.kaggle.com/datasets/sandhaya4u/august-bank-statement-sandhaya
