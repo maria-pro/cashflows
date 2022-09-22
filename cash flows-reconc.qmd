@@ -14,6 +14,8 @@ execute:
 ```{r}
 library(tidyverse)
 library(janitor)
+theme_set(theme_minimal())
+
 ```
 
 ## Cash flows - bank reconciliation
@@ -37,15 +39,11 @@ We start backwards from this very list and we dig into doing bank reconciliation
 This time we do a very simple example just looking at the bank statement and making our head around. It is a "personal" bank statement that comes from [Kaggle](https://www.kaggle.com/datasets/sandhaya4u/august-bank-statement-sandhaya)
 
 
-
 ```{r}
-
 cf<-read_csv("data/bank_st.csv")
-cf2<-read_csv("data/bank_st2.csv")
 
 cf%>%head()
 ```
-
 This is a typical bank statement you can view in your bank account where each row is a transaction in that reporting period (e.g. month). We do not have the name of the second party  for the transactions (e.g. the name of the store or the company that credited/debited the account), but all transactions have been classified - which can be seen under `Category`.
 
 The dataset has `Debit Amount`, which is when you were charged, and `Credit Amount`, which is when you were paid. The `Closing Balance` is a running balance that shows the amount of cash in your account after the transaction. The most important parts of that `Closing Balance` are the initial and final numbers and they are used to reconcial (= match) balances in your own "books" (accounting books!= accounting records). If those number do not match, we investigate individual closing balances for the transactions to identify where we were overpaid or underpaid.
@@ -55,7 +53,6 @@ Let's look closer at the data: it is not messy, but not ideal...
 Column names have blanks and they do not play well in functions, so let's use `clean_names()` from `janitor` package to make them more R friendly
 
 ```{r}
-
 cf<-cf%>%
   clean_names()
 
@@ -64,34 +61,107 @@ cf%>%head()
 
 That's better! so now all variables are in small letters and have camel_case!
 
+```{r}
+names(cf)
+```
+
 Let's explore the data and do some simple **counting** - yes, we love to count!
 
-Let's see which day has the most transactions and which category is the most used one (what is the money drainer!):
+First, let's see which day has the most number of transactions and which category is the most used one (what is the money drainer!):
 
 ```{r}
 cf%>%count(day, sort=TRUE)
 
 cf%>%count(category, sort=TRUE)
 
-cf%>%ggplot(aes(category))+
-  geom_bar()+
-  theme_minimal()
+```
+
+Well, good, but does not look nice.. So let's "paint it"
+
+```{r}
+cf%>%
+  count(category) %>% 
+  ggplot(aes(x=fct_reorder(category, desc(n)), n)) + 
+  geom_col()+ 
+  labs(x = "Categories", y = "Number of transactions",
+title ="Cash receipts/spending across categories",
+subtitle = "per number of transactions")+
+  theme(
+  # Hide panel borders and remove grid lines
+  panel.border = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change axis line
+  axis.line = element_line(colour = "black")
+  )
+
+cf%>%
+  count(day) %>% 
+  ggplot(aes(x=fct_reorder(day, desc(n)), n)) + 
+  geom_col()+ 
+  labs(x = "Categories", y = "Number of transactions",
+title ="Cash receipts/spending across days of the week",
+subtitle = "per number of transactions")+
+  theme(
+  panel.border = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  axis.line = element_line(colour = "black")
+  )
+```
+And if we have a look at the dollar $ spending (where credited amount is 0) per category
+
+```{r}
+cf%>%filter(credit_amount==0)%>%
+  group_by(category)%>%
+  summarise(category_spend=sum(debit_amount),
+            n=n())%>%
+  ggplot(aes(x=fct_reorder(category, desc(category_spend)),
+             y=category_spend))+
+  geom_col()+ 
+  labs(x = "Categories", y = "$ value",
+title ="Cash receipts/spending across categories",
+subtitle = "$ value")+
+  theme(
+  panel.border = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  axis.line = element_line(colour = "black")
+  )
+
+cf%>%filter(credit_amount==0)%>%
+  group_by(day)%>%
+  summarise(day_spend=sum(debit_amount),
+            n=n())%>%
+  ggplot(aes(x=fct_reorder(day, desc(day_spend)),
+             y=day_spend))+
+  geom_col()+ 
+  labs(x = "Days", y = "$ value",
+title ="Cash receipts/spending across days",
+subtitle = "$ value")+
+  theme(
+  panel.border = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  axis.line = element_line(colour = "black")
+  )
 ```
 
 For a real business, this amount of Saturday transactions would raise a red flag, but - this data is from personal records, so looks like someone is having a blast off after a busy week :)
 
 Also, with `category` that `None` does not sound right.... it is the second highest so... I would really investigate what sort of `None` is that `None`...
 
-```{r}
-cf%>%count(day, category, sort=TRUE)
-```
+Let's see the balance for the month...
 
 ```{r}
-cf%>%count(category, day, sort=TRUE)
+balance<-sum(cf$credit_amount)-sum(cf$debit_amount)
+
+balance
 ```
 
-Let's have a look at the average spend
+Woohoo! Our balance is positive, so we managed to grow our wealth!
 
+Indeed, it is a very simple example, but a good foundation to start your R experience in accounting!
 ....
 
 ## References

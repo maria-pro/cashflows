@@ -116,8 +116,14 @@ ul.task-list{list-style: none;}
 </div>
 </div>
 <p>That’s better! so now all variables are in small letters and have camel_case!</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "date"            "day"             "type"            "category"       
+[5] "debit_amount"    "credit_amount"   "closing_balance"</code></pre>
+</div>
+</div>
 <p>Let’s explore the data and do some simple <strong>counting</strong> - yes, we love to count!</p>
-<p>Let’s see which day has the most transactions and which category is the most used one (what is the money drainer!):</p>
+<p>First, let’s see which day has the most number of transactions and which category is the most used one (what is the money drainer!):</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 7 × 2
@@ -146,52 +152,35 @@ ul.task-list{list-style: none;}
  9 Rent              2
 10 Salary            2</code></pre>
 </div>
+</div>
+<p>Well, good, but does not look nice.. So let’s “paint it”</p>
+<div class="cell">
 <div class="cell-output-display">
-<p><img src="cash-flows-reconc_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+<p><img src="cash-flows-reconc_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="cash-flows-reconc_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>And if we have a look at the dollar $ spending (where credited amount is 0) per category</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="cash-flows-reconc_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="cash-flows-reconc_files/figure-html/unnamed-chunk-7-2.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>For a real business, this amount of Saturday transactions would raise a red flag, but - this data is from personal records, so looks like someone is having a blast off after a busy week :)</p>
 <p>Also, with <code>category</code> that <code>None</code> does not sound right…. it is the second highest so… I would really investigate what sort of <code>None</code> is that <code>None</code>…</p>
+<p>Let’s see the balance for the month…</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 38 × 3
-   day       category     n
-   &lt;chr&gt;     &lt;chr&gt;    &lt;int&gt;
- 1 Saturday  Shopping    24
- 2 Saturday  ATM          5
- 3 Sunday    Shopping     5
- 4 Friday    None         4
- 5 Friday    Shopping     4
- 6 Sunday    None         4
- 7 Thursday  Shopping     4
- 8 Tuesday   None         4
- 9 Wednesday Shopping     4
-10 Monday    Interest     3
-# … with 28 more rows
-# ℹ Use `print(n = ...)` to see more rows</code></pre>
+<pre><code>[1] 268715.5</code></pre>
 </div>
 </div>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 38 × 3
-   category day           n
-   &lt;chr&gt;    &lt;chr&gt;     &lt;int&gt;
- 1 Shopping Saturday     24
- 2 ATM      Saturday      5
- 3 Shopping Sunday        5
- 4 None     Friday        4
- 5 None     Sunday        4
- 6 None     Tuesday       4
- 7 Shopping Friday        4
- 8 Shopping Thursday      4
- 9 Shopping Wednesday     4
-10 ATM      Wednesday     3
-# … with 28 more rows
-# ℹ Use `print(n = ...)` to see more rows</code></pre>
-</div>
-</div>
-<p>Let’s have a look at the average spend</p>
-<p>….</p>
+<p>Woohoo! Our balance is positive, so we managed to grow our wealth!</p>
+<p>Indeed, it is a very simple example, but a good foundation to start your R experience in accounting! ….</p>
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>
