@@ -173,6 +173,27 @@ ul.task-list{list-style: none;}
 </div>
 <p>For a real business, this amount of Saturday transactions would raise a red flag, but - this data is from personal records, so looks like someone is having a blast off after a busy week :)</p>
 <p>Also, with <code>category</code> that <code>None</code> does not sound right…. it is the second highest so… I would really investigate what sort of <code>None</code> is that <code>None</code>…</p>
+<p>Well, what are out total earn and which days we are paid and what for?</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 2
+  category     n
+  &lt;chr&gt;    &lt;int&gt;
+1 Interest     8
+2 Salary       2</code></pre>
+</div>
+</div>
+<p>It looks like we have only two major category - interest and salary. Let’s see what brings more money</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 2
+  category category_total
+  &lt;chr&gt;             &lt;dbl&gt;
+1 Interest          4050.
+2 Salary          500508 </code></pre>
+</div>
+</div>
+<p>Well, it is still salary! but would be sooo good if it is our passive income that drives the cash flows!</p>
 <p>Let’s see the balance for the month…</p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">

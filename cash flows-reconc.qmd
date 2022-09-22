@@ -151,6 +151,22 @@ For a real business, this amount of Saturday transactions would raise a red flag
 
 Also, with `category` that `None` does not sound right.... it is the second highest so... I would really investigate what sort of `None` is that `None`...
 
+Well, what are out total earn and which days we are paid and what for?
+
+```{r}
+cf%>%filter(credit_amount>0)%>%
+  count(category)
+```
+
+It looks like we have only two major category - interest and salary. Let's see what brings more money
+
+```{r}
+cf%>%filter(credit_amount>0)%>%
+  group_by(category)%>%
+  summarise(category_total=sum(credit_amount))
+```
+Well, it is still salary! but would be sooo good if it is our passive income that drives the cash flows!
+
 Let's see the balance for the month...
 
 ```{r}
