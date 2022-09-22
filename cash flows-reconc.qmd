@@ -59,7 +59,7 @@ cf<-cf%>%
 cf%>%head()
 ```
 
-That's better! so now all variables are in small letters and have camel_case!
+That's better! so now all variables are in small letters and have snake_case!
 
 ```{r}
 names(cf)
