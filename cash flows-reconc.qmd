@@ -14,7 +14,12 @@ execute:
 ```{r}
 library(tidyverse)
 library(janitor)
+library(lubridate)
 theme_set(theme_minimal())
+options(scipen = 100)
+
+
+
 
 ```
 
@@ -67,7 +72,68 @@ names(cf)
 
 Let's explore the data and do some simple **counting** - yes, we love to count!
 
-First, let's see which day has the most number of transactions and which category is the most used one (what is the money drainer!):
+First, what is the closing balance and how it changes during the month
+
+But before we do so, let's have a close look at the `date` column. There are a few issues there as some dates include single vs double for days and two-digit vs four-digit for year. It is also in a string format.
+
+
+```{r}
+class(cf$date)
+
+unique(cf$date)
+
+```
+
+To fix this, let's convert to the date type and fix the formating with `lubridate` package
+
+
+```{r}
+cf$date<-dmy(cf$date)
+```
+
+Now, let's see the spend per each billing date. We exclude the days with no spend:
+
+```{r}
+cf%>%
+  group_by(date)%>%
+  summarise(spend=sum(debit_amount))
+
+
+cf%>%
+  group_by(date)%>%
+  summarise(spend=sum(debit_amount))%>%
+  filter(spend!=0)%>%
+  ggplot(aes(date, spend))+
+  geom_line()
+```
+
+
+Now, let's see type of categories we have
+
+```{r}
+cf%>%count(category, sort=TRUE)
+```
+
+This `None` category does not look right.... What is it there...
+
+```{r}
+cf%>% filter(category=="None")%>%
+  head()
+```  
+It looks like the majority of these entries are not really transactions, but a closing balance. Do we need to include them? Probably not. Let's confirm that they are not transactions and have `debit_amount` and `credit_amount` as zero
+
+```{r}
+cf%>% filter(category=="None")%>%
+  filter(debit_amount!=0 | credit_amount!=0)
+```
+
+and it is a good idea to exclude them
+
+```{r}
+cf<-cf%>%filter(category!="None")
+```
+
+Let's see which day has the most number of transactions and which category is the most used one (what is the money drainer!):
 
 ```{r}
 cf%>%count(day, sort=TRUE)
